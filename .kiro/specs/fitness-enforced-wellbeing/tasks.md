@@ -1,6 +1,8 @@
 # Implementation Plan
 
-- [-] 1. Setup project dependencies and Android configuration
+- [x] 1. Setup project dependencies and Android configuration
+
+
 
 
 
@@ -12,41 +14,61 @@
   - Update build.gradle with minSdkVersion 21 and targetSdkVersion 34
   - _Requirements: 10.1, 10.2, 10.6, 10.7_
 
-- [ ] 2. Create data models and constants
-  - [ ] 2.1 Implement ExerciseSettings model with JSON serialization
+- [x] 2. Create data models and constants
+
+
+
+
+
+
+  - [x] 2.1 Implement ExerciseSettings model with JSON serialization
+
     - Create lib/models/exercise_settings.dart with ExerciseType enum
     - Add fields: monitoredApps, usageTimeLimitMinutes, rewardTimeMinutes, exerciseType, repCount, isMonitoringEnabled
     - Implement toJson() and fromJson() methods
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6_
   
-  - [ ] 2.2 Implement AppUsageModel with usage tracking fields
+
+  - [x] 2.2 Implement AppUsageModel with usage tracking fields
+
     - Create lib/models/app_usage_model.dart
     - Add fields: packageName, appName, todayUsage, totalUsage, lastUsed
     - Implement JSON serialization methods
     - _Requirements: 3.4, 8.3_
   
-  - [ ] 2.3 Implement ExerciseStats model for tracking completions
+  - [x] 2.3 Implement ExerciseStats model for tracking completions
+
+
     - Create lib/models/exercise_stats.dart
     - Add fields: todayCompletions, totalCompletions, lastExerciseDate, exerciseBreakdown
     - Implement incrementCompletion() and resetDailyStats() methods
     - Implement JSON serialization
     - _Requirements: 8.1, 8.2, 8.5, 8.6_
   
-  - [ ] 2.4 Implement MonitoringState model for service state
+  - [x] 2.4 Implement MonitoringState model for service state
+
+
     - Create lib/models/monitoring_state.dart
     - Add fields: currentSessionUsage, rewardTimeExpiry, isOverlayActive, currentMonitoredApp
     - Implement isInRewardPeriod() and shouldTriggerIntervention() methods
     - Implement JSON serialization
     - _Requirements: 3.4, 7.4, 7.5_
   
-  - [ ] 2.5 Create constants file with social media package names
+
+  - [x] 2.5 Create constants file with social media package names
+
     - Create lib/utils/constants.dart
     - Define common social media app package names (Instagram, TikTok, Facebook, Twitter, Snapchat, etc.)
     - Define time limit options, reward time options, rep count options
     - Define angle thresholds for exercises
     - _Requirements: 1.3, 1.4, 1.6_
 
-- [ ] 3. Implement storage layer with SharedPreferences
+- [x] 3. Implement storage layer with SharedPreferences
+
+
+
+
+
   - Create lib/utils/storage_helper.dart with StorageHelper class
   - Implement loadSettings() and saveSettings() for ExerciseSettings
   - Implement loadStats() and saveStats() for ExerciseStats
@@ -55,7 +77,12 @@
   - Add error handling for storage failures with in-memory fallback
   - _Requirements: 1.2, 3.9, 8.7, 9.8_
 
-- [ ] 4. Create permission service for centralized permission management
+- [x] 4. Create permission service for centralized permission management
+
+
+
+
+
   - Create lib/services/permission_service.dart
   - Implement checkAllPermissions() to verify all required permissions
   - Implement hasUsageStatsPermission() using AppUsage package
@@ -66,28 +93,42 @@
   - Implement requestCameraPermission() for runtime permission
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-- [ ] 5. Implement angle calculator utility for pose geometry
+- [x] 5. Implement angle calculator utility for pose geometry
+
+
+
+
+
   - Create lib/utils/angle_calculator.dart
   - Implement calculateAngle(Point a, Point b, Point c) using arctangent formula
   - Implement calculateDistance(Point a, Point b) for Euclidean distance
   - Implement isAligned(List<Point> points, double threshold) for alignment checking
   - _Requirements: 6.3, 6.4, 6.5, 6.6_
 
-- [ ] 6. Build exercise counter implementations
-  - [ ] 6.1 Create base ExerciseCounter abstract class
+- [x] 6. Build exercise counter implementations
+
+
+
+
+  - [x] 6.1 Create base ExerciseCounter abstract class
+
     - Create lib/pose_detection/exercise_counter.dart
     - Define abstract interface with currentReps, isInCorrectForm, processPose(), reset()
     - _Requirements: 5.5, 5.6, 5.7, 5.8, 6.7_
   
-  - [ ] 6.2 Implement JumpingJackCounter with state machine
+
+
+  - [x] 6.2 Implement JumpingJackCounter with state machine
     - Create lib/pose_detection/jumping_jack_counter.dart extending ExerciseCounter
     - Implement state machine (NEUTRAL, EXTENDED, RETURNING)
     - Implement processPose() to check shoulder Y position vs nose Y position
     - Check ankle distance for legs spread detection
     - Count rep on complete cycle (neutral -> extended -> neutral)
     - _Requirements: 5.5, 6.1, 6.2, 6.7_
+
   
-  - [ ] 6.3 Implement SquatCounter with angle calculation
+
+  - [x] 6.3 Implement SquatCounter with angle calculation
     - Create lib/pose_detection/squat_counter.dart extending ExerciseCounter
     - Implement state machine (STANDING, DESCENDING, BOTTOM, ASCENDING)
     - Calculate hip-knee-ankle angle using AngleCalculator
@@ -95,8 +136,10 @@
     - Detect up position when angle > 160°
     - Count rep on complete down->up cycle
     - _Requirements: 5.6, 6.3, 6.4, 6.7_
+
   
-  - [ ] 6.4 Implement PushUpCounter with shoulder-elbow-wrist angle
+
+  - [x] 6.4 Implement PushUpCounter with shoulder-elbow-wrist angle
     - Create lib/pose_detection/pushup_counter.dart extending ExerciseCounter
     - Implement state machine similar to SquatCounter
     - Calculate shoulder-elbow-wrist angle
@@ -105,8 +148,11 @@
     - Detect up position when angle > 160°
     - Count rep on complete cycle
     - _Requirements: 5.7, 6.5, 6.6, 6.7_
+
   
-  - [ ] 6.5 Implement PlankCounter with duration tracking
+
+  - [x] 6.5 Implement PlankCounter with duration tracking
+
     - Create lib/pose_detection/plank_counter.dart extending ExerciseCounter
     - Implement validatePlankPosition() to check shoulder-hip-knee alignment
     - Track elapsed time only when position is correct
@@ -114,7 +160,11 @@
     - Complete when target duration reached
     - _Requirements: 5.8, 5.9, 6.8_
 
-- [ ] 7. Create pose painter for landmark visualization
+- [x] 7. Create pose painter for landmark visualization
+
+
+
+
   - Create lib/pose_detection/pose_painter.dart extending CustomPainter
   - Implement paint() method to draw landmarks as colored circles
   - Implement drawConnection() to draw skeleton lines between landmarks
@@ -122,7 +172,12 @@
   - Add visual feedback for correct/incorrect form
   - _Requirements: 5.3, 5.11_
 
-- [ ] 8. Implement pose detector view with camera integration
+- [x] 8. Implement pose detector view with camera integration
+
+
+
+
+
   - Create lib/pose_detection/pose_detector_view.dart as StatefulWidget
   - Implement initializeCamera() with front camera and medium resolution
   - Configure ML Kit PoseDetector with stream mode and accurate model
@@ -135,33 +190,47 @@
   - Implement proper dispose() to cleanup camera and detector
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 6.10_
 
-- [ ] 9. Build settings screen UI and logic
-  - [ ] 9.1 Create SettingsScreen widget with state management
+- [x] 9. Build settings screen UI and logic
+
+
+
+
+  - [x] 9.1 Create SettingsScreen widget with state management
+
+
     - Create lib/screens/settings_screen.dart as StatefulWidget
     - Initialize state variables for all settings (selectedApps, usageTimeLimit, rewardTime, exerciseType, repCount, isMonitoringEnabled)
     - Implement initState() to load settings from storage
     - _Requirements: 1.1, 1.2_
   
-  - [ ] 9.2 Implement app selector with installed apps detection
+  - [x] 9.2 Implement app selector with installed apps detection
+
+
     - Implement loadInstalledApps() to query device for installed apps
     - Filter for common social media apps using package name matching
     - Create multi-select list UI with checkboxes
     - Update selectedApps state on selection changes
     - _Requirements: 1.1, 1.2_
   
-  - [ ] 9.3 Add time limit and reward time selectors
+  - [x] 9.3 Add time limit and reward time selectors
+
+
     - Create dropdown or slider for usage time limit (5, 10, 15, 30 minutes)
     - Create dropdown or slider for reward time (2, 5, 10 minutes)
     - Update state on changes
     - _Requirements: 1.3, 1.4_
   
-  - [ ] 9.4 Add exercise type and rep count selectors
+  - [x] 9.4 Add exercise type and rep count selectors
+
+
     - Create exercise type picker (Jumping Jacks, Squats, Push-ups, Planks)
     - Create rep count selector (10, 15, 20, 25, 30 for exercises; 30, 60, 90 seconds for planks)
     - Conditionally show rep count vs duration based on exercise type
     - _Requirements: 1.5, 1.6_
   
-  - [ ] 9.5 Implement permission validation and monitoring toggle
+  - [x] 9.5 Implement permission validation and monitoring toggle
+
+
     - Add permission status indicators showing granted/denied state
     - Implement validatePermissions() using PermissionService
     - Add monitoring toggle switch
@@ -170,13 +239,20 @@
     - Implement toggleMonitoring() to start/stop foreground service
     - _Requirements: 1.7, 2.6, 2.7, 2.8_
   
-  - [ ] 9.6 Implement settings persistence and service updates
+  - [x] 9.6 Implement settings persistence and service updates
+
+
     - Implement saveSettings() to persist all settings using StorageHelper
     - Call saveSettings() whenever settings change
     - Implement updateServiceConfig() to send new settings to running foreground service
     - _Requirements: 1.2, 1.8_
 
-- [ ] 10. Implement usage monitor service
+- [x] 10. Implement usage monitor service
+
+
+
+
+
   - Create lib/services/usage_monitor_service.dart
   - Initialize state variables (monitoredApps, usageStartTime, cumulativeUsage, rewardTimeExpiry, usageTimeLimit, rewardDuration)
   - Implement checkCurrentApp() using AppUsage to query foreground app
@@ -189,7 +265,12 @@
   - Add logic to handle multiple monitored apps
   - _Requirements: 3.3, 3.4, 3.5, 7.2, 7.4, 7.5, 7.6, 7.7, 9.3_
 
-- [ ] 11. Implement overlay service for system alert window
+- [x] 11. Implement overlay service for system alert window
+
+
+
+
+
   - Create lib/services/overlay_service.dart
   - Implement showExerciseChallenge() using SystemAlertWindow.showSystemWindow()
   - Configure overlay as full-screen with OVERLAY prefMode
@@ -199,8 +280,14 @@
   - Implement requestPermission() to request SYSTEM_ALERT_WINDOW permission
   - _Requirements: 4.1, 4.2, 4.7_
 
-- [ ] 12. Create foreground service with flutter_foreground_task
-  - [ ] 12.1 Implement TaskHandler for foreground service
+- [x] 12. Create foreground service with flutter_foreground_task
+
+
+
+
+  - [x] 12.1 Implement TaskHandler for foreground service
+
+
     - Create lib/services/foreground_service.dart
     - Create MyTaskHandler extending TaskHandler
     - Implement onStart() to initialize service and load settings
@@ -211,20 +298,31 @@
     - Implement onNotificationPressed() to open app
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 4.6, 9.4_
   
-  - [ ] 12.2 Configure foreground service options and notification
+  - [x] 12.2 Configure foreground service options and notification
+
+
     - Configure FlutterForegroundTaskOptions with 5-second interval
     - Set autoRunOnBoot to true for auto-restart
     - Set allowWakeLock to true
     - Create notification with title "Monitoring Active" and appropriate icon
     - _Requirements: 3.1, 3.2, 3.6_
   
-  - [ ] 12.3 Implement service start/stop methods
+  - [x] 12.3 Implement service start/stop methods
+
+
     - Implement startMonitoringService() to initialize and start foreground task
     - Implement stopMonitoringService() to stop foreground task and clear notification
     - Add auto-restart logic if service is killed
     - _Requirements: 3.1, 3.7, 3.8, 9.4_
 
-- [ ] 13. Build exercise overlay screen
+- [x] 13. Build exercise overlay screen
+
+
+
+
+
+
+
   - Create lib/screens/exercise_overlay_screen.dart as StatefulWidget
   - Initialize state variables (exerciseType, targetReps, currentReps, isExercising, showSuccessAnimation)
   - Load exercise settings from storage in initState()
@@ -239,7 +337,12 @@
   - Display rep counter or timer based on exercise type
   - _Requirements: 4.3, 4.4, 4.5, 4.7, 4.8, 5.1, 5.10, 7.1, 7.3, 8.5_
 
-- [ ] 14. Create dashboard screen with statistics
+- [x] 14. Create dashboard screen with statistics
+
+
+
+
+
   - Create lib/screens/dashboard_screen.dart as StatefulWidget
   - Initialize state variables (todayExerciseCount, totalExerciseCount, monitoredAppsUsage, timeSaved)
   - Implement loadStatistics() to fetch data from StorageHelper
@@ -252,7 +355,12 @@
   - Add pull-to-refresh functionality
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 15. Implement main app structure and navigation
+- [x] 15. Implement main app structure and navigation
+
+
+
+
+
   - Update lib/main.dart with MaterialApp configuration
   - Create bottom navigation bar with Dashboard and Settings tabs
   - Set up navigation between DashboardScreen and SettingsScreen

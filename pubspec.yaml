@@ -34,6 +34,30 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  
+  # ML Kit for pose detection
+  google_mlkit_pose_detection: ^0.14.0
+  
+  # App usage monitoring
+  app_usage: ^4.0.0
+  
+  # System alert window for overlay
+  system_alert_window: ^2.0.0
+  
+  # Foreground service
+  flutter_foreground_task: ^9.1.0
+  
+  # Camera access
+  camera: ^0.11.0+2
+  
+  # Local storage
+  shared_preferences: ^2.3.3
+  
+  # Permission handling
+  permission_handler: ^11.3.1
+  
+  # Device apps query
+  device_apps: ^2.2.0
 
 dev_dependencies:
   flutter_test:
