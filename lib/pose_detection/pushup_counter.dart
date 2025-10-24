@@ -4,6 +4,12 @@ import '../utils/constants.dart';
 import '../utils/angle_calculator.dart';
 import 'dart:math';
 
+/// State machine states for Push-up exercises
+enum _PushUpState {
+  up,     // Arms extended
+  down,   // Bottom of push-up
+}
+
 /// Counter for Push-up exercises
 /// 
 /// Uses a state machine to track the exercise progression:
@@ -14,15 +20,9 @@ import 'dart:math';
 /// 
 /// Also validates horizontal body position to ensure proper push-up form
 class PushUpCounter extends ExerciseCounter {
-  /// State machine states
-  enum _State {
-    up,     // Arms extended
-    down,   // Bottom of push-up
-  }
-  
-  _State _state = _State.up;
+  _PushUpState _state = _PushUpState.up;
   int _reps = 0;
-  bool _correctForm = false;
+  bool _correctForm = true; // Start with true to avoid immediate warnings
   
   @override
   int get currentReps => _reps;
@@ -52,12 +52,6 @@ class PushUpCounter extends ExerciseCounter {
     if (leftShoulder == null || leftElbow == null || leftWrist == null ||
         rightShoulder == null || rightElbow == null || rightWrist == null ||
         leftHip == null || rightHip == null) {
-      _correctForm = false;
-      return;
-    }
-    
-    // Check InFrameLikelihood
-    if (pose.likelihood != null && pose.likelihood! < ExerciseThresholds.minInFrameLikelihood) {
       _correctForm = false;
       return;
     }
@@ -92,10 +86,10 @@ class PushUpCounter extends ExerciseCounter {
     
     // State machine logic
     switch (_state) {
-      case _State.up:
+      case _PushUpState.up:
         if (avgAngle < ExerciseThresholds.pushUpDownAngle && isHorizontal) {
           // Transition to down position
-          _state = _State.down;
+          _state = _PushUpState.down;
           _correctForm = true;
         } else {
           // Correct form in up position is arms extended and horizontal body
@@ -103,11 +97,11 @@ class PushUpCounter extends ExerciseCounter {
         }
         break;
         
-      case _State.down:
+      case _PushUpState.down:
         if (avgAngle > ExerciseThresholds.pushUpUpAngle && isHorizontal) {
           // Complete rep: returned to up position
           _reps++;
-          _state = _State.up;
+          _state = _PushUpState.up;
           _correctForm = true;
         } else {
           // Correct form in down position is bent arms and horizontal body
@@ -119,7 +113,7 @@ class PushUpCounter extends ExerciseCounter {
   
   @override
   void reset() {
-    _state = _State.up;
+    _state = _PushUpState.up;
     _reps = 0;
     _correctForm = false;
   }

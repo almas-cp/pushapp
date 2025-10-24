@@ -18,7 +18,7 @@ class PlankCounter extends ExerciseCounter {
   DateTime? _startTime;
   Duration _elapsedTime = Duration.zero;
   bool _isInPosition = false;
-  bool _correctForm = false;
+  bool _correctForm = true; // Start with true to avoid immediate warnings
   DateTime? _lastUpdateTime;
   
   /// Create a PlankCounter with target duration in seconds
@@ -57,12 +57,6 @@ class PlankCounter extends ExerciseCounter {
     // Check if all required landmarks are detected
     if (leftShoulder == null || leftHip == null || leftKnee == null ||
         rightShoulder == null || rightHip == null || rightKnee == null) {
-      _handlePositionBreak();
-      return;
-    }
-    
-    // Check InFrameLikelihood
-    if (pose.likelihood != null && pose.likelihood! < ExerciseThresholds.minInFrameLikelihood) {
       _handlePositionBreak();
       return;
     }

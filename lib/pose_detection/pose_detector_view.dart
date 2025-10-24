@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
@@ -23,11 +24,15 @@ class PoseDetectorView extends StatefulWidget {
   /// Whether to show the camera preview
   final bool showCamera;
   
+  /// Debug callback for monitoring detection status
+  final Function(String debugInfo)? onDebugInfo;
+  
   const PoseDetectorView({
     Key? key,
     this.onPoseDetected,
     this.exerciseCounter,
     this.showCamera = true,
+    this.onDebugInfo,
   }) : super(key: key);
   
   @override
@@ -42,6 +47,10 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   Pose? _currentPose;
   bool _isUserVisible = true;
   String? _errorMessage;
+  int _framesProcessed = 0;
+  int _successfulDetections = 0;
+  int _errorCount = 0;
+  DateTime? _lastDebugUpdate;
   
   @override
   void initState() {
@@ -90,11 +99,12 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
       }
       
       // Initialize camera controller with medium resolution
+      // Note: Using YUV420 because NV21 conversion has bugs in camera plugin
       _cameraController = CameraController(
         frontCamera,
         ResolutionPreset.medium,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.nv21, // Required for Android ML Kit
+        imageFormatGroup: ImageFormatGroup.yuv420, // Use YUV420 to avoid NV21 bug
       );
       
       await _cameraController!.initialize();
@@ -103,8 +113,12 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
         _isCameraInitialized = true;
       });
       
+      _updateDebugInfo('📷 Camera ready, resolution: ${_cameraController!.value.previewSize}');
+      
       // Start image stream for pose detection
       _startImageStream();
+      
+      _updateDebugInfo('🎬 Streaming started, analyzing frames...');
       
     } catch (e) {
       setState(() {
@@ -133,25 +147,37 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
   Future<void> _processImage(CameraImage image) async {
     if (_poseDetector == null) return;
     
+    _framesProcessed++;
+    
     try {
       // Convert CameraImage to InputImage for ML Kit
       final inputImage = _convertCameraImage(image);
       
-      if (inputImage == null) return;
+      if (inputImage == null) {
+        _errorCount++;
+        _updateDebugInfo('❌ Conversion failed! Format: ${image.format.raw}, Errors: $_errorCount');
+        return;
+      }
       
       // Detect poses in the image
       final poses = await _poseDetector!.processImage(inputImage);
       
+      _successfulDetections++;
+      
       if (poses.isNotEmpty) {
         final pose = poses.first;
         
-        // Check if user is properly visible (InFrameLikelihood > 0.5)
+        // Check if user is properly visible
         final isVisible = _checkUserVisibility(pose);
         
-        setState(() {
-          _currentPose = pose;
-          _isUserVisible = isVisible;
-        });
+        _updateDebugInfo('✅ Pose detected! Frames: $_framesProcessed, Poses: $_successfulDetections, Errors: $_errorCount');
+        
+        if (mounted) {
+          setState(() {
+            _currentPose = pose;
+            _isUserVisible = isVisible;
+          });
+        }
         
         // Only process pose if user is visible
         if (isVisible) {
@@ -162,56 +188,141 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
           widget.onPoseDetected?.call(pose);
         }
       } else {
-        setState(() {
-          _currentPose = null;
-          _isUserVisible = false;
-        });
+        _updateDebugInfo('No pose in frame (Frames: $_framesProcessed)');
+        if (mounted) {
+          setState(() {
+            _currentPose = null;
+            _isUserVisible = false;
+          });
+        }
       }
     } catch (e) {
       // Handle detection errors silently to avoid UI disruption
+      // This catches buffer errors from camera plugin
+      _errorCount++;
+      _updateDebugInfo('❌ Error: $e (Count: $_errorCount)');
       debugPrint('Error processing image: $e');
+      // Don't update state on error, just continue
+    }
+  }
+  
+  /// Update debug info (throttled to 3 times per second)
+  void _updateDebugInfo(String info) {
+    final now = DateTime.now();
+    // Throttle to 3 updates per second for better real-time feedback
+    if (_lastDebugUpdate == null || now.difference(_lastDebugUpdate!).inMilliseconds > 333) {
+      _lastDebugUpdate = now;
+      widget.onDebugInfo?.call(info);
+      debugPrint('DEBUG: $info'); // Also print to console
     }
   }
   
   /// Convert CameraImage to InputImage for ML Kit processing
+  /// Converts YUV420 to NV21 format required by ML Kit
   InputImage? _convertCameraImage(CameraImage image) {
     if (_cameraController == null) return null;
     
-    final camera = _cameraController!.description;
-    
-    // Get image rotation based on device orientation and camera sensor
-    final sensorOrientation = camera.sensorOrientation;
-    InputImageRotation? rotation;
-    
-    if (camera.lensDirection == CameraLensDirection.front) {
-      rotation = InputImageRotation.rotation270deg;
-    } else {
-      rotation = InputImageRotation.rotation90deg;
+    try {
+      final camera = _cameraController!.description;
+      
+      // Get image rotation based on device orientation and camera sensor
+      InputImageRotation rotation;
+      if (camera.lensDirection == CameraLensDirection.front) {
+        rotation = InputImageRotation.rotation270deg;
+      } else {
+        rotation = InputImageRotation.rotation90deg;
+      }
+      
+      // Check if we have the expected YUV420 format (3 planes)
+      if (image.planes.length != 3) {
+        debugPrint('Expected 3 planes for YUV420, got ${image.planes.length}');
+        return null;
+      }
+      
+      // Convert YUV420 to NV21 format
+      final bytes = _convertYUV420ToNV21(image);
+      if (bytes == null) {
+        debugPrint('Failed to convert YUV420 to NV21');
+        return null;
+      }
+      
+      // Create InputImage with NV21 format
+      return InputImage.fromBytes(
+        bytes: bytes,
+        metadata: InputImageMetadata(
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: rotation,
+          format: InputImageFormat.nv21,
+          bytesPerRow: image.width,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error converting camera image: $e');
+      return null;
     }
-    
-    // Get image format
-    final format = InputImageFormatValue.fromRawValue(image.format.raw);
-    if (format == null) return null;
-    
-    // Get plane data
-    if (image.planes.isEmpty) return null;
-    
-    final plane = image.planes.first;
-    
-    // Create InputImage
-    return InputImage.fromBytes(
-      bytes: plane.bytes,
-      metadata: InputImageMetadata(
-        size: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: rotation,
-        format: format,
-        bytesPerRow: plane.bytesPerRow,
-      ),
-    );
+  }
+  
+  /// Convert YUV420 to NV21 format
+  /// YUV420 has 3 planes: Y, U, V
+  /// NV21 format: Y plane followed by interleaved VU plane
+  Uint8List? _convertYUV420ToNV21(CameraImage image) {
+    try {
+      final int width = image.width;
+      final int height = image.height;
+      final int ySize = width * height;
+      final int uvSize = width * height ~/ 2;
+      
+      final Uint8List nv21 = Uint8List(ySize + uvSize);
+      
+      // Copy Y plane
+      final yPlane = image.planes[0];
+      final yBytes = yPlane.bytes;
+      
+      if (yPlane.bytesPerRow == width) {
+        // Direct copy if no padding
+        nv21.setRange(0, ySize, yBytes);
+      } else {
+        // Copy row by row if there's padding
+        for (int i = 0; i < height; i++) {
+          nv21.setRange(
+            i * width,
+            i * width + width,
+            yBytes,
+            i * yPlane.bytesPerRow,
+          );
+        }
+      }
+      
+      // Interleave U and V planes (V first for NV21)
+      final uPlane = image.planes[1];
+      final vPlane = image.planes[2];
+      final uBytes = uPlane.bytes;
+      final vBytes = vPlane.bytes;
+      
+      int uvIndex = ySize;
+      final int uvWidth = width ~/ 2;
+      final int uvHeight = height ~/ 2;
+      
+      for (int i = 0; i < uvHeight; i++) {
+        for (int j = 0; j < uvWidth; j++) {
+          final int uIndex = i * uPlane.bytesPerRow + j;
+          final int vIndex = i * vPlane.bytesPerRow + j;
+          
+          // NV21 format: YYYYVUVUVU...
+          nv21[uvIndex++] = vBytes[vIndex];
+          nv21[uvIndex++] = uBytes[uIndex];
+        }
+      }
+      
+      return nv21;
+    } catch (e) {
+      debugPrint('Error in YUV420 to NV21 conversion: $e');
+      return null;
+    }
   }
   
   /// Check if user is properly visible in frame
-  /// Returns true if InFrameLikelihood > 0.5 for key landmarks
+  /// Returns true if InFrameLikelihood > 0.3 for key landmarks
   bool _checkUserVisibility(Pose pose) {
     // Check key landmarks for visibility
     final keyLandmarks = [
@@ -225,13 +336,14 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
     int visibleCount = 0;
     for (final landmarkType in keyLandmarks) {
       final landmark = pose.landmarks[landmarkType];
-      if (landmark != null && landmark.likelihood > 0.5) {
+      if (landmark != null && landmark.likelihood > 0.3) {
         visibleCount++;
       }
     }
     
-    // User is considered visible if at least 3 out of 5 key landmarks are visible
-    return visibleCount >= 3;
+    // User is considered visible if at least 2 out of 5 key landmarks are visible
+    // This is more lenient to avoid false warnings, especially for head-only exercises
+    return visibleCount >= 2;
   }
   
   /// Clean up camera and detector resources
@@ -305,25 +417,38 @@ class _PoseDetectorViewState extends State<PoseDetectorView> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Camera preview
+        // Camera preview with overlay - FittedBox Contain method
         if (widget.showCamera)
-          Center(
-            child: AspectRatio(
-              aspectRatio: cameraAspectRatio,
-              child: CameraPreview(_cameraController!),
-            ),
-          ),
-        
-        // Pose visualization overlay
-        if (_currentPose != null && widget.showCamera)
-          CustomPaint(
-            painter: PosePainter(
-              pose: _currentPose,
-              imageSize: Size(
-                _cameraController!.value.previewSize!.height,
-                _cameraController!.value.previewSize!.width,
+          Container(
+            color: Colors.black,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: SizedBox(
+                  width: _cameraController!.value.previewSize!.height,
+                  height: _cameraController!.value.previewSize!.width,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Camera preview
+                      CameraPreview(_cameraController!),
+                      
+                      // Pose visualization overlay (matches camera preview size)
+                      if (_currentPose != null)
+                        CustomPaint(
+                          painter: PosePainter(
+                            pose: _currentPose,
+                            imageSize: Size(
+                              _cameraController!.value.previewSize!.height,
+                              _cameraController!.value.previewSize!.width,
+                            ),
+                            isInCorrectForm: widget.exerciseCounter?.isInCorrectForm ?? true,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-              isInCorrectForm: widget.exerciseCounter?.isInCorrectForm ?? true,
             ),
           ),
         

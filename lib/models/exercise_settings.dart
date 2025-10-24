@@ -1,8 +1,6 @@
 enum ExerciseType {
-  jumpingJacks,
   squats,
-  pushUps,
-  planks,
+  headNods,
 }
 
 class ExerciseSettings {
@@ -40,7 +38,7 @@ class ExerciseSettings {
       rewardTimeMinutes: json['rewardTimeMinutes'] ?? 5,
       exerciseType: ExerciseType.values.firstWhere(
         (e) => e.name == json['exerciseType'],
-        orElse: () => ExerciseType.jumpingJacks,
+        orElse: () => ExerciseType.squats,
       ),
       repCount: json['repCount'] ?? 20,
       isMonitoringEnabled: json['isMonitoringEnabled'] ?? false,

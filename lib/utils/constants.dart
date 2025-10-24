@@ -66,6 +66,11 @@ class ExerciseThresholds {
   // Jumping jack thresholds
   static const double jumpingJackSpreadThreshold = 0.3; // Relative to shoulder width
   
+  // Head nod thresholds (horizontal movement)
+  static const double headNodLeftThreshold = -8.0; // Degrees from center (very sensitive)
+  static const double headNodRightThreshold = 8.0; // Degrees from center (very sensitive)
+  static const double headNodCenterTolerance = 4.0; // Tolerance for center position
+  
   // General pose detection
   static const double minConfidence = 0.5;
   static const double minInFrameLikelihood = 0.5;

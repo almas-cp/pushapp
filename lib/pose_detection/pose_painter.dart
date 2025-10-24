@@ -37,9 +37,13 @@ class PosePainter extends CustomPainter {
   }
   
   /// Draw all pose landmarks as colored circles
+  /// Only draws landmarks with confidence > 0.5 (visible points)
   void _drawLandmarks(Canvas canvas, Size size, Map<PoseLandmarkType, PoseLandmark> landmarks) {
     landmarks.forEach((type, landmark) {
-      _drawLandmark(canvas, size, landmark);
+      // Only draw visible landmarks (confidence > 0.5)
+      if (landmark.likelihood > 0.5) {
+        _drawLandmark(canvas, size, landmark);
+      }
     });
   }
   
@@ -72,6 +76,7 @@ class PosePainter extends CustomPainter {
   }
   
   /// Draw skeleton connections between landmarks
+  /// Only draws connections where both landmarks are visible (confidence > 0.5)
   void _drawSkeleton(Canvas canvas, Size size, Map<PoseLandmarkType, PoseLandmark> landmarks) {
     // Define skeleton connections (pairs of landmarks to connect)
     final connections = _getSkeletonConnections();
@@ -80,7 +85,11 @@ class PosePainter extends CustomPainter {
       final startLandmark = landmarks[connection.start];
       final endLandmark = landmarks[connection.end];
       
-      if (startLandmark != null && endLandmark != null) {
+      // Only draw connection if both landmarks exist and are visible
+      if (startLandmark != null && 
+          endLandmark != null && 
+          startLandmark.likelihood > 0.5 && 
+          endLandmark.likelihood > 0.5) {
         _drawConnection(canvas, size, startLandmark, endLandmark);
       }
     }
@@ -149,13 +158,19 @@ class PosePainter extends CustomPainter {
   }
   
   /// Translate pose coordinates to canvas coordinates
+  /// Simple scaling since FittedBox.contain maintains aspect ratio
+  /// Mirrors X coordinate for front camera
   Offset _translatePoint(double x, double y, Size size) {
     // ML Kit returns coordinates in the original image space
-    // We need to scale them to the canvas size
+    // With FittedBox.contain, the canvas size matches the image aspect ratio
+    // So we can use simple proportional scaling
     final scaleX = size.width / imageSize.width;
     final scaleY = size.height / imageSize.height;
     
-    return Offset(x * scaleX, y * scaleY);
+    // Mirror the X coordinate for front camera (since preview is mirrored)
+    final mirroredX = imageSize.width - x;
+    
+    return Offset(mirroredX * scaleX, y * scaleY);
   }
   
   /// Get color based on confidence level

@@ -550,12 +550,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (value != null) {
                   setState(() {
                     exerciseType = value;
-                    // Update rep count based on exercise type
-                    if (value == ExerciseType.planks) {
-                      repCount = RepCountOptions.defaultPlankDuration;
-                    } else {
-                      repCount = RepCountOptions.defaultReps;
-                    }
+                    // Both exercises are rep-based
+                    repCount = RepCountOptions.defaultReps;
                   });
                   _saveSettings();
                 }
@@ -627,14 +623,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Helper to get exercise type display name
   String _getExerciseTypeName(ExerciseType type) {
     switch (type) {
-      case ExerciseType.jumpingJacks:
-        return 'Jumping Jacks';
       case ExerciseType.squats:
         return 'Squats';
-      case ExerciseType.pushUps:
-        return 'Push-ups';
-      case ExerciseType.planks:
-        return 'Planks';
+      case ExerciseType.headNods:
+        return 'Head Nods';
     }
   }
 

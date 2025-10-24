@@ -9,6 +9,7 @@ import '../pose_detection/jumping_jack_counter.dart';
 import '../pose_detection/squat_counter.dart';
 import '../pose_detection/pushup_counter.dart';
 import '../pose_detection/plank_counter.dart';
+import '../pose_detection/head_nod_counter.dart';
 import '../services/usage_monitor_service.dart';
 
 /// Full-screen exercise overlay screen shown when usage limit is exceeded
@@ -107,6 +108,8 @@ class _ExerciseOverlayScreenState extends State<ExerciseOverlayScreen>
         return 'Push-ups';
       case ExerciseType.planks:
         return 'Plank';
+      case ExerciseType.headNods:
+        return 'Head Nods';
     }
   }
 
@@ -121,6 +124,8 @@ class _ExerciseOverlayScreenState extends State<ExerciseOverlayScreen>
         return 'Lower your body until your chest nearly touches the ground, then push back up';
       case ExerciseType.planks:
         return 'Hold a straight body position with forearms on the ground';
+      case ExerciseType.headNods:
+        return 'Move your head from side to side (left-center-right) as if saying "no"';
     }
   }
 
@@ -151,6 +156,8 @@ class _ExerciseOverlayScreenState extends State<ExerciseOverlayScreen>
         return PushUpCounter();
       case ExerciseType.planks:
         return PlankCounter(targetDurationSeconds: _targetReps);
+      case ExerciseType.headNods:
+        return HeadNodCounter();
     }
   }
 

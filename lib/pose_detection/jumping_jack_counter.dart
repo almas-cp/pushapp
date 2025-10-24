@@ -4,6 +4,12 @@ import '../utils/constants.dart';
 import '../utils/angle_calculator.dart';
 import 'dart:math';
 
+/// State machine states for Jumping Jack exercises
+enum _JumpingJackState {
+  neutral,    // Arms down, legs together
+  extended,   // Arms up, legs spread
+}
+
 /// Counter for Jumping Jack exercises
 /// 
 /// Uses a state machine to track the exercise progression:
@@ -13,15 +19,9 @@ import 'dart:math';
 /// 
 /// A rep is counted when the user completes a full cycle: NEUTRAL -> EXTENDED -> NEUTRAL
 class JumpingJackCounter extends ExerciseCounter {
-  /// State machine states
-  enum _State {
-    neutral,    // Arms down, legs together
-    extended,   // Arms up, legs spread
-  }
-  
-  _State _state = _State.neutral;
+  _JumpingJackState _state = _JumpingJackState.neutral;
   int _reps = 0;
-  bool _correctForm = false;
+  bool _correctForm = true; // Start with true to avoid immediate warnings
   
   @override
   int get currentReps => _reps;
@@ -47,12 +47,6 @@ class JumpingJackCounter extends ExerciseCounter {
       return;
     }
     
-    // Check InFrameLikelihood
-    if (pose.likelihood != null && pose.likelihood! < ExerciseThresholds.minInFrameLikelihood) {
-      _correctForm = false;
-      return;
-    }
-    
     // Check if arms are up (shoulders above nose level)
     final armsUp = (leftShoulder.y < nose.y) && (rightShoulder.y < nose.y);
     
@@ -67,21 +61,21 @@ class JumpingJackCounter extends ExerciseCounter {
     
     // State machine logic
     switch (_state) {
-      case _State.neutral:
+      case _JumpingJackState.neutral:
         if (armsUp && legsSpread) {
           // Transition to extended state
-          _state = _State.extended;
+          _state = _JumpingJackState.extended;
           _correctForm = true;
         } else {
           _correctForm = !armsUp && !legsSpread; // Correct form in neutral is arms down, legs together
         }
         break;
         
-      case _State.extended:
+      case _JumpingJackState.extended:
         if (!armsUp && !legsSpread) {
           // Complete rep: returned to neutral
           _reps++;
-          _state = _State.neutral;
+          _state = _JumpingJackState.neutral;
           _correctForm = true;
         } else {
           _correctForm = armsUp && legsSpread; // Correct form in extended is arms up, legs spread
@@ -92,7 +86,7 @@ class JumpingJackCounter extends ExerciseCounter {
   
   @override
   void reset() {
-    _state = _State.neutral;
+    _state = _JumpingJackState.neutral;
     _reps = 0;
     _correctForm = false;
   }
